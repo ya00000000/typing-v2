@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>英打遊戲版本二</title>
+<style>
+:root{--ink:#3b2a3a;--cream:#fffbe8;--gold:#ffcc4d;box-sizing:border-box}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{min-height:100svh;display:flex;align-items:center;justify-content:center;padding:16px 12px 16vh;
+ font-family:'Noto Sans TC','PingFang TC','Microsoft JhengHei',system-ui,sans-serif;color:var(--ink);
+ background:linear-gradient(#9fd4f5 0 34%,#bfe3f7 34% 62%,#e2f3fb 62% 100%) no-repeat fixed}
+body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:12vh;z-index:-1;background:#8a5a2b;
+ border-top:6px solid #58c24e;box-shadow:inset 0 -2px 0 #a8703a,0 -6px 0 #8be06a}
+#w{width:min(100%,960px);container-type:inline-size;background:var(--cream);border:4px solid var(--ink);border-radius:8px;
+ box-shadow:0 8px 0 #0004;padding:3cqw 3.4cqw 3.4cqw;text-align:center}
+h1{margin:0;font-size:clamp(26px,6.4cqw,60px);font-weight:900;letter-spacing:.04em;color:#ffd23f;
+ -webkit-text-stroke:.9cqw var(--ink);paint-order:stroke fill;text-shadow:0 .8cqw 0 #b8651b,0 1.2cqw 0 var(--ink)}
+.sub{display:inline-block;margin:2.2cqw 0 2.4cqw;padding:.5cqw 2.4cqw;font-size:clamp(13px,2.2cqw,20px);font-weight:700;
+ color:#fff;background:#6bcb77;border:3px solid var(--ink);box-shadow:0 4px 0 var(--ink);text-shadow:2px 2px 0 var(--ink)}
+#kbox{border:4px solid var(--ink);border-radius:8px;background:#e8ebe6;overflow:hidden;box-shadow:0 5px 0 #0003}
+#kb{display:block;width:100%;height:auto}
+#imgmsg{margin:0;padding:8cqw 4cqw}
+button{font:inherit;font-size:clamp(18px,3cqw,28px);font-weight:900;margin-top:3cqw;padding:.9em 2.4em;cursor:pointer;
+ color:var(--ink);background:var(--gold);border:4px solid var(--ink);border-radius:6px;box-shadow:0 6px 0 #8a4b14}
+button:hover{background:#ffe58f}
+button:active{transform:translateY(4px);box-shadow:0 2px 0 #8a4b14}
+button:focus-visible{outline:4px solid #e63946;outline-offset:3px}
+#msg{min-height:3.2em;margin:2.4cqw auto 0;max-width:46em;padding:.6em 1em;font-size:clamp(14px,2cqw,18px);line-height:1.7;border:3px solid transparent}
+.warn{background:#ffe3e3;border-color:#e63946!important;color:#8c1d28}
+</style>
+</head>
+<body>
+<main id="w">
+  <h1>英打遊戲版本二</h1>
+  <p class="sub">鍵盤預覽</p>
+
+  <div id="kbox">
+    <!-- 圖片放在 assets 資料夾，所以路徑是 assets/ 加檔名 -->
+    <img id="kb" src="assets/keyboard.png" width="1440" height="600" alt="英文鍵盤示意圖，中排 A 到分號以粉色標示">
+    <p id="imgmsg" class="warn" role="alert" hidden>找不到鍵盤圖片 assets/keyboard.png。<br>請確認 assets 資料夾和 index.html 放在同一層，keyboard.png 在 assets 裡面，檔名全部小寫，而且不是在壓縮檔預覽視窗裡開啟。</p>
+  </div>
+
+  <button id="start" type="button">▶ 開始</button>
+  <p id="msg" role="status">按下「開始」，聽聽看遊戲的提示音。</p>
+
+  <!-- 聲音也放在 assets 資料夾，所以路徑是 assets/ 加檔名 -->
+  <audio id="beep" src="assets/beep.wav" preload="auto"></audio>
+</main>
+
+<script>
+const img = document.getElementById('kb');
+const box = document.getElementById('imgmsg');
+const au = document.getElementById('beep');
+const btn = document.getElementById('start');
+const msg = document.getElementById('msg');
+
+const AUDIO_MISSING = '找不到聲音檔 assets/beep.wav。請確認 assets 資料夾和 index.html 放在同一層，beep.wav 在 assets 裡面，檔名全部小寫。';
+const AUDIO_BLOCKED = '瀏覽器沒有播放聲音。請檢查電腦音量、這個分頁是否被靜音，然後再按一次「開始」。';
+
+function say(text, bad) { msg.textContent = text; msg.className = bad ? 'warn' : ''; }
+
+// 圖片：找不到時顯示說明
+function imgFail() { img.hidden = true; box.hidden = false; }
+img.addEventListener('error', imgFail);
+if (img.complete && img.naturalWidth === 0) imgFail();
+
+// 聲音：載入失敗就先提醒
+function audioFail() { say(AUDIO_MISSING, true); }
+au.addEventListener('error', audioFail);
+if (au.error) audioFail();
+
+au.addEventListener('playing', () => { btn.textContent = '♪ 播放中…'; say('嗶嗶聲播放中！'); });
+au.addEventListener('ended', () => { btn.textContent = '▶ 再按一次'; say('聽到聲音了嗎？可以再按一次試試。'); });
+
+btn.addEventListener('click', () => {
+  if (au.error) { audioFail(); return; }
+  au.currentTime = 0;
+  const p = au.play();
+  if (p && p.catch) {
+    p.catch(err => {
+      if (au.error || err.name === 'NotSupportedError') audioFail();
+      else say(AUDIO_BLOCKED, true);
+    });
+  }
+});
+</script>
+</body>
+</html>
